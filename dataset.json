@@ -1,0 +1,952 @@
+{
+  "_lisez_moi": [
+    "Jeu de test du workflow de suivi proactif des commandes.",
+    "",
+    "Les dates sont RELATIVES à la date d'exécution, pour que le jeu reste valable",
+    "dans le temps. Elles sont résolues au runtime par le noeud Code 'Mock API ERP'.",
+    "  { \"ouvres\": n }      -> n jours OUVRES avant (n<0) ou apres (n>0) aujourd'hui",
+    "  { \"calendaires\": n } -> n jours CALENDAIRES (utilise pour le cas 24)",
+    "",
+    "Deux sections :",
+    "  - commandes    : ce que renvoie l'API ERP (6 champs + _cas_teste pour la demo).",
+    "                   C'est la seule section lue par 'Mock API ERP'.",
+    "  - etat_initial : l'historique de la table d'etat, pour que les cas 3 et 9 a 20",
+    "                   aient un passe coherent. Voir etat-initial.csv (meme contenu,",
+    "                   dates resolues) a importer dans la Google Sheet.",
+    "",
+    "Les champs prefixes par _ ne font pas partie du schema ERP et sont ignores",
+    "par le moteur de decision."
+  ],
+  "commandes": [
+    {
+      "order_number": "CMD-2026-0101",
+      "company": "Menuiseries Delaunay",
+      "contact_email": "achats@menuiseries-delaunay.example",
+      "order_date": {
+        "ouvres": -4
+      },
+      "delivery_date": {
+        "ouvres": 8
+      },
+      "status": "Commande_confirmee",
+      "_cas_teste": "1 — Nominal, Commande_confirmee, large marge : aucune action"
+    },
+    {
+      "order_number": "CMD-2026-0102",
+      "company": "Atelier Beaumont SAS",
+      "contact_email": "logistique@atelier-beaumont.example",
+      "order_date": {
+        "ouvres": -9
+      },
+      "delivery_date": {
+        "ouvres": 5
+      },
+      "status": "En_preparation",
+      "_cas_teste": "2 — Nominal, En_preparation dans les temps : aucune action",
+      "_evolution": [
+        {
+          "a_partir_du_jour": 4,
+          "status": "Expediee",
+          "_pourquoi": "remise au transporteur"
+        },
+        {
+          "a_partir_du_jour": 7,
+          "status": "Livree",
+          "_pourquoi": "livree"
+        }
+      ]
+    },
+    {
+      "order_number": "CMD-2026-0103",
+      "company": "Groupe Ferrand Industrie",
+      "contact_email": "sylvie.gauthier@ferrand-industrie.example",
+      "order_date": {
+        "ouvres": -12
+      },
+      "delivery_date": {
+        "ouvres": 2
+      },
+      "status": "Expediee",
+      "_cas_teste": "3 — Nominal, Expediee deja notifiee : aucune action (pas de doublon M5)",
+      "_evolution": [
+        {
+          "a_partir_du_jour": 3,
+          "status": "Livree",
+          "_pourquoi": "livree comme annonce"
+        }
+      ]
+    },
+    {
+      "order_number": "CMD-2026-0104",
+      "company": "Sanitaires du Rhone",
+      "contact_email": "commandes@sanitaires-rhone.example",
+      "order_date": {
+        "ouvres": -14
+      },
+      "delivery_date": {
+        "ouvres": -1
+      },
+      "status": "Livree",
+      "_cas_teste": "4 — Nominal, Livree : exclue du flux, dossier clos"
+    },
+    {
+      "order_number": "CMD-2026-0105",
+      "company": "Electro Vannier",
+      "contact_email": "p.vannier@electro-vannier.example",
+      "order_date": {
+        "ouvres": -10
+      },
+      "delivery_date": {
+        "ouvres": 3
+      },
+      "status": "Expediee",
+      "_cas_teste": "5 — Expediee, dans les temps, jamais notifiee : M5",
+      "_evolution": [
+        {
+          "a_partir_du_jour": 3,
+          "status": "Livree",
+          "_pourquoi": "livree a la date annoncee dans M5"
+        }
+      ]
+    },
+    {
+      "order_number": "CMD-2026-0106",
+      "company": "Comptoir Lemoine",
+      "contact_email": "julie.marchand@comptoir-lemoine.example",
+      "order_date": {
+        "ouvres": -6
+      },
+      "delivery_date": {
+        "ouvres": 1
+      },
+      "status": "Commande_confirmee",
+      "_cas_teste": "6 — Retard detecte ce matin, blocage fournisseur : M1 (sans date)",
+      "_evolution": [
+        {
+          "a_partir_du_jour": 5,
+          "status": "En_preparation",
+          "_pourquoi": "le fournisseur livre : declenche M4 (deblocage + date ferme)"
+        },
+        {
+          "a_partir_du_jour": 8,
+          "status": "Expediee",
+          "_pourquoi": "remise au transporteur"
+        },
+        {
+          "a_partir_du_jour": 10,
+          "status": "Livree",
+          "_pourquoi": "livree"
+        }
+      ]
+    },
+    {
+      "order_number": "CMD-2026-0107",
+      "company": "Batiplus Normandie",
+      "contact_email": "achats@batiplus-normandie.example",
+      "order_date": {
+        "ouvres": -8
+      },
+      "delivery_date": {
+        "ouvres": 1
+      },
+      "status": "En_preparation",
+      "_cas_teste": "7 — En_preparation en retard, jamais alertee : M2 (date ferme)",
+      "_evolution": [
+        {
+          "a_partir_du_jour": 3,
+          "status": "Expediee",
+          "_pourquoi": "expedition : l ETA se resserre, l engagement tient, donc silence"
+        },
+        {
+          "a_partir_du_jour": 6,
+          "status": "Livree",
+          "_pourquoi": "livree"
+        }
+      ]
+    },
+    {
+      "order_number": "CMD-2026-0108",
+      "company": "Quincaillerie Vasseur",
+      "contact_email": "contact@quincaillerie-vasseur.example",
+      "order_date": {
+        "ouvres": -11
+      },
+      "delivery_date": {
+        "ouvres": -1
+      },
+      "status": "Expediee",
+      "_cas_teste": "8 — Expediee en retard, jamais alertee : M2 (date ferme transporteur)",
+      "_evolution": [
+        {
+          "a_partir_du_jour": 3,
+          "status": "Livree",
+          "_pourquoi": "livree"
+        }
+      ]
+    },
+    {
+      "order_number": "CMD-2026-0109",
+      "company": "Techniprot Ile-de-France",
+      "contact_email": "n.robert@techniprot.example",
+      "order_date": {
+        "ouvres": -13
+      },
+      "delivery_date": {
+        "ouvres": -2
+      },
+      "status": "Commande_confirmee",
+      "_cas_teste": "9 — RETARD_SANS_DATE, engagement non echu : aucune action (silence legitime)"
+    },
+    {
+      "order_number": "CMD-2026-0110",
+      "company": "Fournitures Pro Aquitaine",
+      "contact_email": "service.achats@fp-aquitaine.example",
+      "order_date": {
+        "ouvres": -15
+      },
+      "delivery_date": {
+        "ouvres": -1
+      },
+      "status": "Commande_confirmee",
+      "_cas_teste": "10 — RETARD_SANS_DATE, engagement echu ce matin : M3",
+      "_evolution": [
+        {
+          "a_partir_du_jour": 5,
+          "status": "En_preparation",
+          "_pourquoi": "deblocage fournisseur : M4"
+        },
+        {
+          "a_partir_du_jour": 8,
+          "status": "Expediee",
+          "_pourquoi": "remise au transporteur"
+        }
+      ]
+    },
+    {
+      "order_number": "CMD-2026-0111",
+      "company": "Isolations Perrin",
+      "contact_email": "m.perrin@isolations-perrin.example",
+      "order_date": {
+        "ouvres": -16
+      },
+      "delivery_date": {
+        "ouvres": -2
+      },
+      "status": "En_preparation",
+      "_cas_teste": "11 — RETARD_SANS_DATE, le statut passe a En_preparation : M4",
+      "_evolution": [
+        {
+          "a_partir_du_jour": 3,
+          "status": "Expediee",
+          "_pourquoi": "remise au transporteur"
+        },
+        {
+          "a_partir_du_jour": 6,
+          "status": "Livree",
+          "_pourquoi": "livree"
+        }
+      ]
+    },
+    {
+      "order_number": "CMD-2026-0112",
+      "company": "Distri Nord Equipement",
+      "contact_email": "commandes@distri-nord.example",
+      "order_date": {
+        "ouvres": -14
+      },
+      "delivery_date": {
+        "ouvres": -3
+      },
+      "status": "En_preparation",
+      "_cas_teste": "12 — RETARD_DATE, ETA inchange : aucune action (l'engagement tient)",
+      "_evolution": [
+        {
+          "a_partir_du_jour": 4,
+          "status": "Expediee",
+          "_pourquoi": "remise au transporteur"
+        },
+        {
+          "a_partir_du_jour": 7,
+          "status": "Livree",
+          "_pourquoi": "livree"
+        }
+      ]
+    },
+    {
+      "order_number": "CMD-2026-0113",
+      "company": "Serrurerie Baptiste",
+      "contact_email": "atelier@serrurerie-baptiste.example",
+      "order_date": {
+        "ouvres": -12
+      },
+      "delivery_date": {
+        "ouvres": -2
+      },
+      "status": "Expediee",
+      "_cas_teste": "13 — RETARD_DATE, Expediee, glissement d'1 jour : M6",
+      "_evolution": [
+        {
+          "a_partir_du_jour": 3,
+          "status": "Livree",
+          "_pourquoi": "livree au lendemain annonce par M6"
+        }
+      ]
+    },
+    {
+      "order_number": "CMD-2026-0114",
+      "company": "Chauffage Sainte-Barbe",
+      "contact_email": "direction@chauffage-sainte-barbe.example",
+      "order_date": {
+        "ouvres": -17
+      },
+      "delivery_date": {
+        "ouvres": -4
+      },
+      "status": "En_preparation",
+      "_cas_teste": "14 — RETARD_DATE, glissement de 3 jours : aucun email, alerte interne",
+      "_evolution": [
+        {
+          "a_partir_du_jour": 5,
+          "status": "Expediee",
+          "_pourquoi": "le blocage interne se resorbe apres l appel au client"
+        },
+        {
+          "a_partir_du_jour": 8,
+          "status": "Livree",
+          "_pourquoi": "livree"
+        }
+      ]
+    },
+    {
+      "order_number": "CMD-2026-0115",
+      "company": "Outillage Berthier",
+      "contact_email": "l.berthier@outillage-berthier.example",
+      "order_date": {
+        "ouvres": -18
+      },
+      "delivery_date": {
+        "ouvres": -3
+      },
+      "status": "Commande_confirmee",
+      "_cas_teste": "15 — 6 j ouvres de retard fournisseur : escalade fournisseur",
+      "_evolution": [
+        {
+          "a_partir_du_jour": 7,
+          "status": "En_preparation",
+          "_pourquoi": "le fournisseur livre apres escalade"
+        }
+      ]
+    },
+    {
+      "order_number": "CMD-2026-0116",
+      "company": "Metallerie Cordier",
+      "contact_email": "contact@metallerie-cordier.example",
+      "order_date": {
+        "ouvres": -24
+      },
+      "delivery_date": {
+        "ouvres": -9
+      },
+      "status": "Commande_confirmee",
+      "_cas_teste": "16 — 12 j ouvres de retard : escalade critique (appel commercial)"
+    },
+    {
+      "order_number": "CMD-2026-0117",
+      "company": "Peintures Lavigne",
+      "contact_email": "achats@peintures-lavigne.example",
+      "order_date": {
+        "ouvres": -10
+      },
+      "delivery_date": {
+        "ouvres": 2
+      },
+      "status": "En_preparation",
+      "_cas_teste": "17 — En_preparation depuis 4 j ouvres : alerte blocage interne",
+      "_evolution": [
+        {
+          "a_partir_du_jour": 4,
+          "status": "Expediee",
+          "_pourquoi": "le blocage interne est leve : l alerte disparait, M5 part"
+        },
+        {
+          "a_partir_du_jour": 7,
+          "status": "Livree",
+          "_pourquoi": "livree"
+        }
+      ]
+    },
+    {
+      "order_number": "CMD-2026-0118",
+      "company": "Solutions Verlinde",
+      "contact_email": "adv@solutions-verlinde.example",
+      "order_date": {
+        "ouvres": -13
+      },
+      "delivery_date": {
+        "ouvres": 2
+      },
+      "status": "Expediee",
+      "_cas_teste": "18 — Expediee depuis 3 j ouvres : alerte incident transporteur",
+      "_evolution": [
+        {
+          "a_partir_du_jour": 4,
+          "status": "Livree",
+          "_pourquoi": "le transporteur presente enfin le colis (jour 4 : laisse le temps a l alerte de tomber meme si la fenetre demarre un week-end)"
+        }
+      ]
+    },
+    {
+      "order_number": "CMD-2026-0119",
+      "company": "Agencement Sorel",
+      "contact_email": "f.sorel@agencement-sorel.example",
+      "order_date": {
+        "ouvres": -22
+      },
+      "delivery_date": {
+        "ouvres": -2
+      },
+      "status": "Commande_confirmee",
+      "_cas_teste": "19 — 3 messages deja envoyes : plus d'email auto, alerte interne"
+    },
+    {
+      "order_number": "CMD-2026-0120",
+      "company": "Plomberie Guichard",
+      "contact_email": "sav@plomberie-guichard.example",
+      "order_date": {
+        "ouvres": -15
+      },
+      "delivery_date": {
+        "ouvres": -1
+      },
+      "status": "Livree",
+      "_cas_teste": "20 — Livree apres un retard annonce : passage a CLOS, aucun email"
+    },
+    {
+      "order_number": "CMD-2026-0121",
+      "company": "Modulo Agencement",
+      "contact_email": "contact@modulo-agencement.example",
+      "order_date": {
+        "ouvres": -7
+      },
+      "delivery_date": {
+        "ouvres": 0
+      },
+      "status": "Commande_confirmee",
+      "_cas_teste": "21 — Livraison due aujourd'hui, encore chez le fournisseur : M1"
+    },
+    {
+      "order_number": "CMD-2026-0122",
+      "company": "Ferronnerie du Marais",
+      "contact_email": "atelier@ferronnerie-marais.example",
+      "order_date": {
+        "ouvres": -5
+      },
+      "delivery_date": {
+        "ouvres": 2
+      },
+      "status": "Commande_confirmee",
+      "_cas_teste": "22 — Due dans 2 j ouvres : le plancher prouve deja le retard : M1",
+      "_evolution": [
+        {
+          "a_partir_du_jour": 4,
+          "status": "En_preparation",
+          "_pourquoi": "le fournisseur livre : M4"
+        },
+        {
+          "a_partir_du_jour": 7,
+          "status": "Expediee",
+          "_pourquoi": "remise au transporteur"
+        },
+        {
+          "a_partir_du_jour": 9,
+          "status": "Livree",
+          "_pourquoi": "livree"
+        }
+      ]
+    },
+    {
+      "order_number": "CMD-2026-0123",
+      "company": "Sud Equipements Pro",
+      "contact_email": "commandes@sud-equipements.example",
+      "order_date": {
+        "ouvres": -3
+      },
+      "delivery_date": {
+        "ouvres": 5
+      },
+      "status": "Commande_confirmee",
+      "_cas_teste": "23 — Due dans 5 j ouvres : pas encore en retard, aucune action"
+    },
+    {
+      "order_number": "CMD-2026-0124",
+      "company": "Cuisines Tavernier",
+      "contact_email": "showroom@cuisines-tavernier.example",
+      "order_date": {
+        "calendaires": -20
+      },
+      "delivery_date": {
+        "calendaires": 4
+      },
+      "status": "Commande_confirmee",
+      "_cas_teste": "24 — Echeance a 4 jours CALENDAIRES : le calcul ouvre change la reponse selon le jour de la semaine"
+    },
+    {
+      "order_number": "CMD-2026-0125",
+      "company": "Ateliers Roussel",
+      "contact_email": "production@ateliers-roussel.example",
+      "order_date": {
+        "ouvres": -6
+      },
+      "delivery_date": {
+        "ouvres": 3
+      },
+      "status": "Commande_confirmee",
+      "_cas_teste": "25 — Plancher exactement egal a la date promise : pas en retard (bord d'egalite)",
+      "_evolution": [
+        {
+          "a_partir_du_jour": 5,
+          "status": "En_preparation",
+          "_pourquoi": "avance normale"
+        }
+      ]
+    },
+    {
+      "order_number": "CMD-2026-0126",
+      "company": "Signaletique Ouest",
+      "contact_email": "e.morvan@signaletique-ouest.example",
+      "order_date": {
+        "ouvres": -11
+      },
+      "delivery_date": {
+        "ouvres": -1
+      },
+      "status": "Expediee",
+      "_cas_teste": "26 — EXPEDITION_NOTIFIEE puis glissement d'1 jour (cas D) : M6",
+      "_evolution": [
+        {
+          "a_partir_du_jour": 3,
+          "status": "Livree",
+          "_pourquoi": "livree au lendemain annonce par M6"
+        }
+      ]
+    },
+    {
+      "order_number": "CMD-2026-0127",
+      "company": "Toiture Lefevre",
+      "contact_email": "devis@toiture-lefevre.example",
+      "order_date": {
+        "ouvres": -12
+      },
+      "delivery_date": {
+        "ouvres": -1
+      },
+      "status": "Commande_confirmee",
+      "_cas_teste": "27 — M3 due mais un message est deja parti aujourd'hui : plafond d'1 email/jour"
+    },
+    {
+      "order_number": "CMD-2026-0128",
+      "company": "Menuiserie Alu Concept",
+      "contact_email": "bureau@alu-concept.example",
+      "order_date": {
+        "ouvres": -9
+      },
+      "delivery_date": {
+        "ouvres": -1
+      },
+      "status": "En_preparation",
+      "_cas_teste": "28 — En_preparation depuis 2 j, en retard : M2 avec ETA a J+1 ouvre",
+      "_evolution": [
+        {
+          "a_partir_du_jour": 2,
+          "status": "Expediee",
+          "_pourquoi": "remise au transporteur"
+        },
+        {
+          "a_partir_du_jour": 4,
+          "status": "Livree",
+          "_pourquoi": "livree a la date ferme annoncee"
+        }
+      ]
+    },
+    {
+      "order_number": "CMD-2026-0129",
+      "company": "Froid Commercial Bertin",
+      "contact_email": "sav@froid-bertin.example",
+      "order_date": {
+        "ouvres": -19
+      },
+      "delivery_date": {
+        "ouvres": -1
+      },
+      "status": "Commande_confirmee",
+      "_cas_teste": "29 — 2e relance : M3, le compteur atteint le plafond, le robot s'arretera ensuite"
+    },
+    {
+      "order_number": "CMD-2026-0130",
+      "company": "Habitat Duchesne",
+      "contact_email": "contact@habitat-duchesne.example",
+      "order_date": {
+        "ouvres": -16
+      },
+      "delivery_date": {
+        "ouvres": -2
+      },
+      "status": "Livree",
+      "_cas_teste": "30 — Livree apres une notification d'expedition : passage a CLOS"
+    }
+  ],
+  "etat_initial": [
+    {
+      "order_number": "CMD-2026-0103",
+      "statut_erp": "Expediee",
+      "statut_depuis": {
+        "ouvres": -1
+      },
+      "date_annoncee": {
+        "ouvres": 2
+      },
+      "etat_comm": "EXPEDITION_NOTIFIEE",
+      "date_dernier_message": {
+        "ouvres": -1
+      },
+      "nb_messages_client": 1,
+      "date_prochain_contact": "",
+      "escalade_interne_le": "",
+      "premiere_vue_le": {
+        "ouvres": -12
+      }
+    },
+    {
+      "order_number": "CMD-2026-0109",
+      "statut_erp": "Commande_confirmee",
+      "statut_depuis": {
+        "ouvres": -4
+      },
+      "date_annoncee": "",
+      "etat_comm": "RETARD_SANS_DATE",
+      "date_dernier_message": {
+        "ouvres": -2
+      },
+      "nb_messages_client": 1,
+      "date_prochain_contact": {
+        "ouvres": 2
+      },
+      "escalade_interne_le": "",
+      "premiere_vue_le": {
+        "ouvres": -13
+      }
+    },
+    {
+      "order_number": "CMD-2026-0110",
+      "statut_erp": "Commande_confirmee",
+      "statut_depuis": {
+        "ouvres": -6
+      },
+      "date_annoncee": "",
+      "etat_comm": "RETARD_SANS_DATE",
+      "date_dernier_message": {
+        "ouvres": -3
+      },
+      "nb_messages_client": 1,
+      "date_prochain_contact": {
+        "ouvres": 0
+      },
+      "escalade_interne_le": "",
+      "premiere_vue_le": {
+        "ouvres": -15
+      }
+    },
+    {
+      "order_number": "CMD-2026-0111",
+      "statut_erp": "Commande_confirmee",
+      "statut_depuis": {
+        "ouvres": -7
+      },
+      "date_annoncee": "",
+      "etat_comm": "RETARD_SANS_DATE",
+      "date_dernier_message": {
+        "ouvres": -3
+      },
+      "nb_messages_client": 2,
+      "date_prochain_contact": {
+        "ouvres": 1
+      },
+      "escalade_interne_le": "",
+      "premiere_vue_le": {
+        "ouvres": -16
+      }
+    },
+    {
+      "order_number": "CMD-2026-0112",
+      "statut_erp": "En_preparation",
+      "statut_depuis": {
+        "ouvres": -1
+      },
+      "date_annoncee": {
+        "ouvres": 2
+      },
+      "etat_comm": "RETARD_DATE",
+      "date_dernier_message": {
+        "ouvres": -1
+      },
+      "nb_messages_client": 1,
+      "date_prochain_contact": "",
+      "escalade_interne_le": "",
+      "premiere_vue_le": {
+        "ouvres": -14
+      }
+    },
+    {
+      "order_number": "CMD-2026-0113",
+      "statut_erp": "Expediee",
+      "statut_depuis": {
+        "ouvres": -1
+      },
+      "date_annoncee": {
+        "ouvres": -1
+      },
+      "etat_comm": "RETARD_DATE",
+      "date_dernier_message": {
+        "ouvres": -1
+      },
+      "nb_messages_client": 2,
+      "date_prochain_contact": "",
+      "escalade_interne_le": "",
+      "premiere_vue_le": {
+        "ouvres": -12
+      }
+    },
+    {
+      "order_number": "CMD-2026-0114",
+      "statut_erp": "En_preparation",
+      "statut_depuis": {
+        "ouvres": -1
+      },
+      "date_annoncee": {
+        "ouvres": -1
+      },
+      "etat_comm": "RETARD_DATE",
+      "date_dernier_message": {
+        "ouvres": -1
+      },
+      "nb_messages_client": 2,
+      "date_prochain_contact": "",
+      "escalade_interne_le": "",
+      "premiere_vue_le": {
+        "ouvres": -17
+      }
+    },
+    {
+      "order_number": "CMD-2026-0115",
+      "statut_erp": "Commande_confirmee",
+      "statut_depuis": {
+        "ouvres": -9
+      },
+      "date_annoncee": "",
+      "etat_comm": "RETARD_SANS_DATE",
+      "date_dernier_message": {
+        "ouvres": -4
+      },
+      "nb_messages_client": 1,
+      "date_prochain_contact": {
+        "ouvres": 1
+      },
+      "escalade_interne_le": "",
+      "premiere_vue_le": {
+        "ouvres": -18
+      }
+    },
+    {
+      "order_number": "CMD-2026-0116",
+      "statut_erp": "Commande_confirmee",
+      "statut_depuis": {
+        "ouvres": -15
+      },
+      "date_annoncee": "",
+      "etat_comm": "RETARD_SANS_DATE",
+      "date_dernier_message": {
+        "ouvres": -3
+      },
+      "nb_messages_client": 2,
+      "date_prochain_contact": {
+        "ouvres": 2
+      },
+      "escalade_interne_le": "",
+      "premiere_vue_le": {
+        "ouvres": -24
+      }
+    },
+    {
+      "order_number": "CMD-2026-0117",
+      "statut_erp": "En_preparation",
+      "statut_depuis": {
+        "ouvres": -4
+      },
+      "date_annoncee": "",
+      "etat_comm": "AUCUN",
+      "date_dernier_message": "",
+      "nb_messages_client": 0,
+      "date_prochain_contact": "",
+      "escalade_interne_le": "",
+      "premiere_vue_le": {
+        "ouvres": -10
+      }
+    },
+    {
+      "order_number": "CMD-2026-0118",
+      "statut_erp": "Expediee",
+      "statut_depuis": {
+        "ouvres": -3
+      },
+      "date_annoncee": {
+        "ouvres": 2
+      },
+      "etat_comm": "EXPEDITION_NOTIFIEE",
+      "date_dernier_message": {
+        "ouvres": -3
+      },
+      "nb_messages_client": 1,
+      "date_prochain_contact": "",
+      "escalade_interne_le": "",
+      "premiere_vue_le": {
+        "ouvres": -13
+      }
+    },
+    {
+      "order_number": "CMD-2026-0119",
+      "statut_erp": "Commande_confirmee",
+      "statut_depuis": {
+        "ouvres": -12
+      },
+      "date_annoncee": "",
+      "etat_comm": "RETARD_SANS_DATE",
+      "date_dernier_message": {
+        "ouvres": -5
+      },
+      "nb_messages_client": 3,
+      "date_prochain_contact": {
+        "ouvres": 0
+      },
+      "escalade_interne_le": "",
+      "premiere_vue_le": {
+        "ouvres": -22
+      }
+    },
+    {
+      "order_number": "CMD-2026-0120",
+      "statut_erp": "Expediee",
+      "statut_depuis": {
+        "ouvres": -3
+      },
+      "date_annoncee": {
+        "ouvres": -1
+      },
+      "etat_comm": "RETARD_DATE",
+      "date_dernier_message": {
+        "ouvres": -3
+      },
+      "nb_messages_client": 2,
+      "date_prochain_contact": "",
+      "escalade_interne_le": "",
+      "premiere_vue_le": {
+        "ouvres": -15
+      }
+    },
+    {
+      "order_number": "CMD-2026-0126",
+      "statut_erp": "Expediee",
+      "statut_depuis": {
+        "ouvres": -1
+      },
+      "date_annoncee": {
+        "ouvres": -1
+      },
+      "etat_comm": "EXPEDITION_NOTIFIEE",
+      "date_dernier_message": {
+        "ouvres": -1
+      },
+      "nb_messages_client": 1,
+      "date_prochain_contact": "",
+      "escalade_interne_le": "",
+      "premiere_vue_le": {
+        "ouvres": -11
+      }
+    },
+    {
+      "order_number": "CMD-2026-0127",
+      "statut_erp": "Commande_confirmee",
+      "statut_depuis": {
+        "ouvres": -5
+      },
+      "date_annoncee": "",
+      "etat_comm": "RETARD_SANS_DATE",
+      "date_dernier_message": {
+        "ouvres": 0
+      },
+      "nb_messages_client": 1,
+      "date_prochain_contact": {
+        "ouvres": 0
+      },
+      "escalade_interne_le": "",
+      "premiere_vue_le": {
+        "ouvres": -12
+      }
+    },
+    {
+      "order_number": "CMD-2026-0128",
+      "statut_erp": "En_preparation",
+      "statut_depuis": {
+        "ouvres": -2
+      },
+      "date_annoncee": "",
+      "etat_comm": "AUCUN",
+      "date_dernier_message": "",
+      "nb_messages_client": 0,
+      "date_prochain_contact": "",
+      "escalade_interne_le": "",
+      "premiere_vue_le": {
+        "ouvres": -9
+      }
+    },
+    {
+      "order_number": "CMD-2026-0129",
+      "statut_erp": "Commande_confirmee",
+      "statut_depuis": {
+        "ouvres": -8
+      },
+      "date_annoncee": "",
+      "etat_comm": "RETARD_SANS_DATE",
+      "date_dernier_message": {
+        "ouvres": -5
+      },
+      "nb_messages_client": 2,
+      "date_prochain_contact": {
+        "ouvres": 0
+      },
+      "escalade_interne_le": "",
+      "premiere_vue_le": {
+        "ouvres": -19
+      }
+    },
+    {
+      "order_number": "CMD-2026-0130",
+      "statut_erp": "Expediee",
+      "statut_depuis": {
+        "ouvres": -3
+      },
+      "date_annoncee": {
+        "ouvres": -2
+      },
+      "etat_comm": "EXPEDITION_NOTIFIEE",
+      "date_dernier_message": {
+        "ouvres": -3
+      },
+      "nb_messages_client": 1,
+      "date_prochain_contact": "",
+      "escalade_interne_le": "",
+      "premiere_vue_le": {
+        "ouvres": -16
+      }
+    }
+  ]
+}

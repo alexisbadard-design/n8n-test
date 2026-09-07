@@ -1,0 +1,670 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="robots" content="noindex, nofollow">
+<title>Suivi proactif des commandes — livrable</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500;600&display=swap">
+<style>
+/* ===========================================================================
+   Material Design 3 — système partagé par les consoles du livrable
+   ---------------------------------------------------------------------------
+   Implémentation des jetons M3, pas une imitation :
+
+     · échelle typographique officielle (display / headline / title / body /
+       label, 15 rôles, valeurs exactes de la spec) ;
+     · échelle de formes (4 / 8 / 12 / 16 / 28 / full) ;
+     · surfaces TONALES : la profondeur se lit d'abord par le ton du fond,
+       l'ombre ne fait que confirmer — c'est ce qui distingue M3 de M2 ;
+     · state layers : superposition de on-surface à 8 % au survol, 10 % au
+       focus et à l'appui, au lieu de couleurs de survol inventées ;
+     · élévation à deux couches, la forme retenue par Material Web.
+
+   Seed teal : le violet de la palette baseline est le cliché du système, et
+   surtout le bleu, l'ambre et le rouge sont déjà pris par la sémantique
+   d'état. La teinte de marque devait donc être ailleurs.
+   =========================================================================== */
+
+:root {
+  color-scheme: light;
+
+  /* --- Rôles principaux ------------------------------------------------- */
+  --primary: #00687B;
+  --on-primary: #FFFFFF;
+  --primary-container: #B3EBFB;
+  --on-primary-container: #001F27;
+
+  --secondary: #4A6269;
+  --on-secondary: #FFFFFF;
+  --secondary-container: #CDE7EF;
+  --on-secondary-container: #051F25;
+
+  --tertiary: #545D7E;
+  --on-tertiary: #FFFFFF;
+  --tertiary-container: #DBE1FF;
+  --on-tertiary-container: #101A37;
+
+  /* --- Surfaces tonales -------------------------------------------------- */
+  --surface: #F5FAFC;
+  --on-surface: #171C1E;
+  --surface-variant: #DBE4E7;
+  --on-surface-variant: #3F484B;
+
+  --surface-container-lowest: #FFFFFF;
+  --surface-container-low: #EFF5F7;
+  --surface-container: #E9EFF2;
+  --surface-container-high: #E3EAEC;
+  --surface-container-highest: #DEE4E6;
+
+  --outline: #6F797B;
+  --outline-variant: #BFC8CB;
+
+  --inverse-surface: #2B3133;
+  --inverse-on-surface: #ECF2F4;
+  --inverse-primary: #5AD5F1;
+
+  --scrim: 0, 0, 0;
+
+  /* --- Rôles d'état, validés CVD (deutan ΔE 15.8 / normal 22.3) ---------- */
+  --info: #1160A8;
+  --on-info: #FFFFFF;
+  --info-container: #D5E4F7;
+  --on-info-container: #001C38;
+
+  --warning: #B87A00;
+  --on-warning: #FFFFFF;
+  --warning-container: #FBE7C2;
+  --on-warning-container: #291800;
+
+  --danger: #B01046;
+  --on-danger: #FFFFFF;
+  --danger-container: #FFD9E1;
+  --on-danger-container: #3F0018;
+
+  /* --- Teinte du state layer -------------------------------------------- */
+  --etat: 23, 28, 30; /* on-surface, en composantes */
+
+  /* --- Élévation --------------------------------------------------------- */
+  --niveau0: none;
+  --niveau1: 0 1px 2px 0 rgba(0, 0, 0, .3), 0 1px 3px 1px rgba(0, 0, 0, .15);
+  --niveau2: 0 1px 2px 0 rgba(0, 0, 0, .3), 0 2px 6px 2px rgba(0, 0, 0, .15);
+  --niveau3: 0 1px 3px 0 rgba(0, 0, 0, .3), 0 4px 8px 3px rgba(0, 0, 0, .15);
+
+  /* --- Formes ------------------------------------------------------------ */
+  --forme-xs: 4px;
+  --forme-s: 8px;
+  --forme-m: 12px;
+  --forme-l: 16px;
+  --forme-xl: 28px;
+  --forme-full: 999px;
+
+  --sans: "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --mono: "Roboto Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --primary: #5AD5F1;
+    --on-primary: #003641;
+    --primary-container: #004E5D;
+    --on-primary-container: #B3EBFB;
+
+    --secondary: #B1CBD3;
+    --on-secondary: #1C343A;
+    --secondary-container: #334A51;
+    --on-secondary-container: #CDE7EF;
+
+    --tertiary: #BCC5EB;
+    --on-tertiary: #262F4D;
+    --tertiary-container: #3D4665;
+    --on-tertiary-container: #DBE1FF;
+
+    --surface: #0E1416;
+    --on-surface: #DEE4E6;
+    --surface-variant: #3F484B;
+    --on-surface-variant: #BFC8CB;
+
+    --surface-container-lowest: #090F11;
+    --surface-container-low: #171C1E;
+    --surface-container: #1B2122;
+    --surface-container-high: #252B2D;
+    --surface-container-highest: #303638;
+
+    --outline: #899295;
+    --outline-variant: #3F484B;
+
+    --inverse-surface: #DEE4E6;
+    --inverse-on-surface: #2B3133;
+    --inverse-primary: #00687B;
+
+    --info: #3D8CCB;
+    --on-info: #00325A;
+    --info-container: #103A5E;
+    --on-info-container: #CFE4FF;
+
+    --warning: #BC8A10;
+    --on-warning: #3E2E00;
+    --warning-container: #4B3800;
+    --on-warning-container: #FBE7C2;
+
+    --danger: #DE5570;
+    --on-danger: #5B0022;
+    --danger-container: #6B1233;
+    --on-danger-container: #FFD9E1;
+
+    --etat: 222, 228, 230;
+
+    --niveau1: 0 1px 3px 1px rgba(0, 0, 0, .5), 0 1px 2px 0 rgba(0, 0, 0, .6);
+    --niveau2: 0 2px 6px 2px rgba(0, 0, 0, .5), 0 1px 2px 0 rgba(0, 0, 0, .6);
+    --niveau3: 0 4px 8px 3px rgba(0, 0, 0, .5), 0 1px 3px 0 rgba(0, 0, 0, .6);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --primary: #5AD5F1;
+  --on-primary: #003641;
+  --primary-container: #004E5D;
+  --on-primary-container: #B3EBFB;
+
+  --secondary: #B1CBD3;
+  --on-secondary: #1C343A;
+  --secondary-container: #334A51;
+  --on-secondary-container: #CDE7EF;
+
+  --tertiary: #BCC5EB;
+  --on-tertiary: #262F4D;
+  --tertiary-container: #3D4665;
+  --on-tertiary-container: #DBE1FF;
+
+  --surface: #0E1416;
+  --on-surface: #DEE4E6;
+  --surface-variant: #3F484B;
+  --on-surface-variant: #BFC8CB;
+
+  --surface-container-lowest: #090F11;
+  --surface-container-low: #171C1E;
+  --surface-container: #1B2122;
+  --surface-container-high: #252B2D;
+  --surface-container-highest: #303638;
+
+  --outline: #899295;
+  --outline-variant: #3F484B;
+
+  --inverse-surface: #DEE4E6;
+  --inverse-on-surface: #2B3133;
+  --inverse-primary: #00687B;
+
+  --info: #3D8CCB;
+  --on-info: #00325A;
+  --info-container: #103A5E;
+  --on-info-container: #CFE4FF;
+
+  --warning: #BC8A10;
+  --on-warning: #3E2E00;
+  --warning-container: #4B3800;
+  --on-warning-container: #FBE7C2;
+
+  --danger: #DE5570;
+  --on-danger: #5B0022;
+  --danger-container: #6B1233;
+  --on-danger-container: #FFD9E1;
+
+  --etat: 222, 228, 230;
+
+  --niveau1: 0 1px 3px 1px rgba(0, 0, 0, .5), 0 1px 2px 0 rgba(0, 0, 0, .6);
+  --niveau2: 0 2px 6px 2px rgba(0, 0, 0, .5), 0 1px 2px 0 rgba(0, 0, 0, .6);
+  --niveau3: 0 4px 8px 3px rgba(0, 0, 0, .5), 0 1px 3px 0 rgba(0, 0, 0, .6);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--surface);
+  color: var(--on-surface);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: .25px;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------------------------------------------------------------------------
+   Échelle typographique — valeurs exactes de la spec M3
+   ------------------------------------------------------------------------- */
+
+.headline-s { font-size: 24px; line-height: 32px; font-weight: 400; letter-spacing: 0; }
+.title-l { font-size: 22px; line-height: 28px; font-weight: 400; letter-spacing: 0; }
+.title-m { font-size: 16px; line-height: 24px; font-weight: 500; letter-spacing: .15px; }
+.title-s { font-size: 14px; line-height: 20px; font-weight: 500; letter-spacing: .1px; }
+.body-l { font-size: 16px; line-height: 24px; font-weight: 400; letter-spacing: .5px; }
+.body-m { font-size: 14px; line-height: 20px; font-weight: 400; letter-spacing: .25px; }
+.body-s { font-size: 12px; line-height: 16px; font-weight: 400; letter-spacing: .4px; }
+.label-l { font-size: 14px; line-height: 20px; font-weight: 500; letter-spacing: .1px; }
+.label-m { font-size: 12px; line-height: 16px; font-weight: 500; letter-spacing: .5px; }
+.label-s { font-size: 11px; line-height: 16px; font-weight: 500; letter-spacing: .5px; }
+
+/* ---------------------------------------------------------------------------
+   State layers — la couche d'interaction M3, jamais une couleur inventée
+   ------------------------------------------------------------------------- */
+
+.etat { position: relative; isolation: isolate; }
+
+.etat::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgb(var(--etat));
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 90ms linear;
+  border-radius: inherit;
+  z-index: -1;
+}
+
+.etat:hover::before { opacity: .08; }
+.etat:focus-visible::before { opacity: .10; }
+.etat:active::before { opacity: .10; }
+
+/* ---------------------------------------------------------------------------
+   Barre d'application
+   ------------------------------------------------------------------------- */
+
+.barre {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-height: 64px;
+  padding: 10px 24px;
+  background: var(--surface-container);
+  color: var(--on-surface);
+  flex-wrap: wrap;
+}
+
+.barre-nom {
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 400;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.barre-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--on-surface-variant);
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: .4px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.barre-meta b { color: var(--on-surface); font-weight: 500; font-family: var(--mono); }
+.barre-sep { color: var(--outline-variant); }
+.barre-droite { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+
+/* Chip d'assistance : le badge de mode */
+.chip-mode {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: var(--forme-s);
+  background: var(--secondary-container);
+  color: var(--on-secondary-container);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: .5px;
+}
+
+/* ---------------------------------------------------------------------------
+   Cartouche et sections
+   ------------------------------------------------------------------------- */
+
+.cartouche { padding: 8px 24px 24px; max-width: 92ch; }
+.cartouche h1 { margin: 0 0 8px; font-size: 28px; line-height: 36px; font-weight: 400; letter-spacing: 0; }
+.cartouche p { margin: 0; font-size: 16px; line-height: 24px; letter-spacing: .5px; color: var(--on-surface-variant); }
+
+.corps { padding: 0 24px 40px; display: flex; flex-direction: column; gap: 32px; max-width: 1640px; width: 100%; margin: 0 auto; }
+
+.bloc-titre { display: flex; align-items: baseline; gap: 16px; margin-bottom: 12px; flex-wrap: wrap; }
+.bloc-titre h2 { margin: 0; font-size: 16px; line-height: 24px; font-weight: 500; letter-spacing: .15px; white-space: nowrap; }
+.bloc-titre p { margin: 0; font-size: 12px; line-height: 16px; letter-spacing: .4px; color: var(--on-surface-variant); min-width: 0; }
+
+/* ---------------------------------------------------------------------------
+   Cartes
+   ------------------------------------------------------------------------- */
+
+.carte {
+  background: var(--surface-container-low);
+  border-radius: var(--forme-m);
+  overflow: hidden;
+}
+
+.carte-contour {
+  background: var(--surface);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--forme-m);
+  overflow: hidden;
+}
+
+.carte-elevee {
+  background: var(--surface-container-low);
+  border-radius: var(--forme-m);
+  box-shadow: var(--niveau1);
+  overflow: hidden;
+}
+
+.carte-tete {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 16px;
+  background: var(--surface-container);
+  flex-wrap: wrap;
+}
+
+/* ---------------------------------------------------------------------------
+   Chips de filtre
+   ------------------------------------------------------------------------- */
+
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 16px;
+  border: 1px solid var(--outline);
+  border-radius: var(--forme-s);
+  background: transparent;
+  color: var(--on-surface-variant);
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: .1px;
+  cursor: pointer;
+}
+
+.chip[aria-pressed="true"] {
+  background: var(--secondary-container);
+  color: var(--on-secondary-container);
+  border-color: transparent;
+}
+
+/* ---------------------------------------------------------------------------
+   Bouton segmenté
+   ------------------------------------------------------------------------- */
+
+.segments {
+  display: inline-flex;
+  border: 1px solid var(--outline);
+  border-radius: var(--forme-full);
+  overflow: hidden;
+  flex: none;
+  height: 32px;
+}
+
+.segments button {
+  background: transparent;
+  border: 0;
+  border-right: 1px solid var(--outline);
+  padding: 0 14px;
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: .5px;
+  cursor: pointer;
+  color: var(--on-surface-variant);
+}
+
+.segments button:last-child { border-right: 0; }
+.segments button[aria-pressed="true"] { background: var(--secondary-container); color: var(--on-secondary-container); }
+
+/* ---------------------------------------------------------------------------
+   Pastilles d'état
+   ------------------------------------------------------------------------- */
+
+.pastille {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: var(--forme-s);
+  background: var(--surface-container-highest);
+  color: var(--on-surface-variant);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: .3px;
+  white-space: nowrap;
+}
+
+.pastille.p-info { background: var(--info-container); color: var(--on-info-container); }
+.pastille.p-surveiller { background: var(--warning-container); color: var(--on-warning-container); }
+.pastille.p-traiter { background: var(--danger-container); color: var(--on-danger-container); }
+
+/* ---------------------------------------------------------------------------
+   Tableaux
+   ------------------------------------------------------------------------- */
+
+table { border-collapse: collapse; width: 100%; }
+
+thead th {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  letter-spacing: .5px;
+  color: var(--on-surface-variant);
+  text-align: left;
+  background: var(--surface-container);
+  border-bottom: 1px solid var(--outline-variant);
+  padding: 12px 16px;
+  white-space: nowrap;
+}
+
+tbody td { border-bottom: 1px solid var(--outline-variant); padding: 12px 16px; vertical-align: top; }
+tbody tr:last-child td { border-bottom: 0; }
+td.mono, th.mono { font-family: var(--mono); font-size: 13px; }
+
+/* ---------------------------------------------------------------------------
+   Divers
+   ------------------------------------------------------------------------- */
+
+.page { display: flex; flex-direction: column; min-height: 100vh; }
+
+code {
+  font-family: var(--mono);
+  font-size: 12px;
+  background: var(--surface-container-high);
+  border-radius: var(--forme-xs);
+  padding: 1px 6px;
+}
+
+.pied {
+  padding-top: 20px;
+  border-top: 1px solid var(--outline-variant);
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: .4px;
+  color: var(--on-surface-variant);
+  max-width: 110ch;
+}
+
+:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) { *, *::before { transition: none !important; animation: none !important; } }
+
+/* --- Spécifique à la page d'accueil -------------------------------------- */
+
+.corps { max-width: 1120px; gap: 32px; }
+
+.entrees { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; }
+
+.entree {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 20px 24px;
+  background: var(--surface-container-low);
+  border-radius: var(--forme-l);
+  text-decoration: none; color: inherit;
+}
+.entree:hover { box-shadow: var(--niveau1); }
+
+.entree-tete { display: flex; align-items: center; gap: 12px; }
+.entree-num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: var(--forme-full);
+  background: var(--primary-container); color: var(--on-primary-container);
+  font-family: var(--mono); font-size: 12px; font-weight: 600;
+}
+.entree-nom { font-size: 16px; line-height: 24px; font-weight: 500; letter-spacing: .15px; }
+.entree p { margin: 0; font-size: 14px; line-height: 20px; letter-spacing: .25px; color: var(--on-surface-variant); }
+.entree-quoi { font-family: var(--mono); font-size: 11px; line-height: 16px; color: var(--on-surface-variant); }
+
+.deux { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+@media (max-width: 900px) { .deux { grid-template-columns: minmax(0, 1fr); } }
+
+.liste-plate { background: var(--surface-container-low); border-radius: var(--forme-m); overflow: hidden; }
+.ligne { display: grid; grid-template-columns: minmax(0, 200px) minmax(0, 1fr); gap: 14px; padding: 12px 16px; border-bottom: 1px solid var(--outline-variant); font-size: 13px; }
+.ligne:last-child { border-bottom: 0; }
+.ligne .f { font-family: var(--mono); font-size: 12px; color: var(--primary); overflow-wrap: anywhere; }
+.ligne .d { color: var(--on-surface-variant); line-height: 18px; }
+
+.principes { display: flex; flex-direction: column; }
+.principe { padding: 14px 16px; border-bottom: 1px solid var(--outline-variant); }
+.principe:last-child { border-bottom: 0; }
+.principe b { display: block; font-size: 14px; font-weight: 500; letter-spacing: .1px; margin-bottom: 3px; }
+.principe span { font-size: 13px; color: var(--on-surface-variant); line-height: 19px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="barre">
+    <span class="barre-nom">Suivi commandes</span>
+    <div class="barre-meta">
+      <span>client <b>VLD</b></span>
+      <span class="barre-sep">/</span>
+      <span>workflow <b>n8n</b></span>
+      <span class="barre-sep">/</span>
+      <span>30 commandes · 10 matins</span>
+    </div>
+    <div class="barre-droite"><span class="chip-mode">dry_run</span></div>
+  </div>
+
+  <div class="cartouche">
+    <h1>Suivi proactif des commandes clients</h1>
+    <p>
+      Un workflow qui tourne chaque matin à 7 h, lit les commandes non livrées dans
+      l’ERP, décide qui doit être prévenu de quoi, et produit deux sorties : des
+      emails clients et une file de dossiers pour le support. Il détecte un retard
+      <b>avant</b> l’échéance annoncée — par le calcul, pas par le statut — et il
+      sait se taire quand il n’a rien de neuf à dire.
+    </p>
+  </div>
+
+  <div class="corps">
+
+    <section>
+      <div class="bloc-titre">
+        <h2>Les vues</h2>
+        <p>Aucun serveur, aucune installation : données, styles et scripts sont dans la page.</p>
+      </div>
+      <div class="entrees">
+
+        <a class="entree" href="demo-10-jours.html">
+          <div class="entree-tete">
+            <span class="entree-num">01</span>
+            <span class="entree-nom">Rejeu de dix matins</span>
+          </div>
+          <p>La séquence complète : 30 commandes, 10 matins, chaque décision et son motif. C’est la vue qui répond à « qui recevrait quoi, et pourquoi ».</p>
+          <span class="entree-quoi">grille cliquable · calcul du retard · message rendu</span>
+        </a>
+
+        <a class="entree" href="tickets.html">
+          <div class="entree-tete">
+            <span class="entree-num">02</span>
+            <span class="entree-nom">La file du support</span>
+          </div>
+          <p>Les alertes deviennent des tickets : un par commande, qui se remplit jour après jour et se ferme à la livraison.</p>
+          <span class="entree-quoi">backlog · historique par dossier · emails envoyés</span>
+        </a>
+
+      </div>
+    </section>
+
+    <section class="deux">
+      <div>
+        <div class="bloc-titre"><h2>Les partis pris</h2></div>
+        <div class="liste-plate principes">
+          <div class="principe">
+            <b>Prévenir avant l’échéance, pas après</b>
+            <span>
+              Deux jours de préparation plus un de livraison : pour tenir une date, tout
+              doit être arrivé trois jours ouvrés avant. Passé ce point, le retard est
+              certain — arithmétiquement — même si la date promise n’est pas passée.
+            </span>
+          </div>
+          <div class="principe">
+            <b>Une date quand on la maîtrise, un engagement sinon</b>
+            <span>
+              Bloqué chez le fournisseur, on n’a aucune visibilité : on annonce une date
+              de recontact, jamais une date de livraison qu’on ne tiendrait pas.
+            </span>
+          </div>
+          <div class="principe">
+            <b>Le silence est une décision</b>
+            <span>
+              Un email par commande et par jour au maximum, jamais le week-end, trois
+              messages automatiques puis un humain reprend. Chaque silence est motivé
+              et consultable.
+            </span>
+          </div>
+          <div class="principe">
+            <b>Rien n’est envoyé pour l’instant</b>
+            <span>
+              Le mode <code>dry_run</code> écrit ce qui partirait dans une feuille de
+              prévisualisation. Passer en production, c’est changer une valeur.
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="bloc-titre"><h2>Ce que contient le dépôt</h2></div>
+        <div class="liste-plate">
+          <div class="ligne"><span class="f">workflow.json</span><span class="d">L’export n8n, importable tel quel. 25 nœuds, envois désactivés.</span></div>
+          <div class="ligne"><span class="f">dataset.json</span><span class="d">Les 30 commandes de test, dates relatives à la date d’exécution.</span></div>
+          <div class="ligne"><span class="f">etat-initial.csv</span><span class="d">La table d’état de départ, à importer dans la Google Sheet.</span></div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="pied">
+      VLD est une entreprise fictive : les sociétés, contacts et numéros de commande
+      du jeu de test sont inventés, et les domaines en <code>.example</code> ne sont
+      joignables par personne. Aucun email n’a été envoyé, aucun ticket créé : les
+      nœuds d’envoi sont livrés désactivés, credentials vides.
+    </footer>
+  </div>
+</div>
+
+
+</body>
+</html>
